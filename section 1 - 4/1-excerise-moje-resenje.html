@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excersise 1</title>
+    <link rel="stylesheet" href="https://unpkg.com/normalize.css/normalize.css">
+    <style type="text/css">
+        body {
+            font-family: monospace;
+            padding: 20px;
+            font-size: 2em;
+        }
+
+        .can {
+            color: green;
+        }
+
+        .cant {
+            color: red;
+        }
+    </style>
+    <script src="https://unpkg.com/vue@3.4.0"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div v-if="areWeDone">
+            <!-- Score -->
+            Your score is: {{ score }}
+        </div>
+        <div v-if="!areWeDone">
+            <!-- The question goes here -->
+            {{ currentIndex + 1 }}. {{question}}?
+        </div>
+        <div>
+            <!-- Connect the input? -->
+            <input v-model="answer" autofocus />
+        </div>
+    </div>
+    <script>
+        const { createApp, ref, computed } = Vue;
+        const App = {
+            setup() {
+                const questions = [
+                    'How much is 2+2',
+                    'How much is 3*5+1',
+                    'What is the rest from 3/1'
+                ];
+                const answers = [
+                    '4',
+                    '16',
+                    '1'
+                ];
+                const score = ref(0);
+                const currentIndex = ref(0);
+                const question = computed(() => {
+                    return questions[currentIndex.value];
+                });
+                const areWeDone = ref(false);
+                const answer = ref(null);
+
+                const checkAnswer = () => {
+                    if (currentIndex.value == 0 && answer.value == '4') score.value++;
+                    if (currentIndex.value == 1 && answer.value == '16') score.value++;
+                    if (currentIndex.value == 2 && answer.value == '1') score.value++;
+
+                    answer.value = null;
+                    currentIndex.value++;
+
+                    if (currentIndex.value >= questions.length) {
+                        areWeDone.value = true;
+                        clearInterval(i);
+                    }
+                }
+
+
+
+                const i = setInterval(checkAnswer, 4000);
+
+                return {
+                    question,
+                    score,
+                    areWeDone,
+                    currentIndex,
+                    answer
+                }
+            },
+        };
+        createApp(App).mount('#app');
+    </script>
+</body>
+
+</html>
