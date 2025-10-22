@@ -1,0 +1,1112 @@
+
+-- Vue.js 3 Masterclass Build 7 Real-World Apps
+
+Course Repository: All source code for this course. https://github.com/piotr-jura-udemy/master-vue
+
+
+-------------------------------------------------------------------------------------------------------
+--------------------------------------- Event handlers - pocetak --------------------------------------
+-------------------------------------------------------------------------------------------------------
+Event handler-i se dodaju sa v-on ili @ 
+Sa event handlerom definisemo sta treba da se desi kada se dogodi neki event (npr. click ili promena vrednosti u input polju).
+
+Dole se na button definise da se na klik pozove funkcija handleClick.
+<button type="submit" v-on:click="handleClick">Add Photo</button>
+Na promenu vrednosti u input polju poziva se funkcija onChange.
+<input @change="onChange" placeholder="Enter image URL">
+
+Event modifier-i mogu da menjaju ponasanje event handler-a.
+Sa ovim dole se sprecava da se izvrsi podrazumevana akcija HTML forme je submit akcija kada se klikne na submit dugme. Po defaultu html forma radi submit forme i refresh stranice.
+<form @submit.prevent="onSubmit"></form>
+
+.prevent moze da se doda i na @click.
+<button type="submit" @click.prevent="addPhoto">Add Photo</button>
+Ovako ce da se uradi submit samo kada se klikne na dugme. Kada je kursor u input polju i pritisne se enter uradice se submit a sa @click.prevent="addPhoto" se izbegava ova situacija.
+-------------------------------------------------------------------------------------------------------
+---------------------------------------- Event handlers - kraj ----------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+-------------------------------------------------------------------------------------------------------
+-------------------------------------- Lifecycle Hooks - pocetak --------------------------------------
+-------------------------------------------------------------------------------------------------------
+Lifecycle hook nam omogucava da se vezemo (iskoristimo) za neki event koji se dogadja prilikom renderovanja vue aplikacije.
+
+Kada se pokrene vue aplikacija prvo sto se izvrsava je setup(){} metoda. Metoda setup() se pokrece samo jednom.
+Hook funkcije za evente su ove dole.
+
+Options API Lifecycle Hooks:
+- beforeCreate()
+- created()
+- beforeMount()
+- mounted()
+- beforeUpdate()
+- updated()
+- beforeUnmount()
+- unmounted()
+
+Composition API Lifecycle Hooks:
+- onBeforeMount()
+- onMounted()
+- onBeforeUpdate()
+- onUpdated()
+- onBeforeUnmount()
+- onUnmounted()
+
+Lifecycle hooks iz Options API su u Composition API-u zamenjene sa setup() metodom. Kada se setup() metod apokrene to znaci da su eventi beforeCreate i created vec zavrseni.
+
+Lifecycle hooks nam omogucavaju da uhvatimo ove evente.
+ 
+Primeri koriscenje eventa:
+- mounted - znaci da je aplikacija pokrenuta i da je mount-ovana tj. insertovana u DOM. Kada je aplikacija mountovana mozemo da manipulisemo DOM-om.
+- beforeUnmount - kada uhvatimo ovaj event mozemo da snimimo podatke jer se aplikacija gasi
+- unmounted - ovaj event moze da se iskoristi za 'clean up'
+
+Hook funkcije se koriste unutar script(){} metode.
+<script>  
+	const { createApp, onMounted } = Vue;
+	const App = {
+		setup() {
+			onMounted(() => {
+				console.log('Aplikacija je pokrenuta');
+			});
+			return {
+
+			}
+		},
+	};
+	createApp(App).mount('#app');
+</script>
+-------------------------------------------------------------------------------------------------------
+--------------------------------------- Lifecycle Hooks - kraj ----------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+-------------------------------------------------------------------------------------------------------
+-------------------------------- manipulacija DOM elementima - pocetak --------------------------------
+-------------------------------------------------------------------------------------------------------
+Ako zelimo da input polje bide u fokusu kada se stranica ucita onda treba u html element dodati ref atribut a u setup() kreirati ref varijablu istog imena. U ref varijabli mora eksplicitino da se setuje null. Sa newTaskInput.value imamo pristup svim atributima html elementa pa se tu setuje fokus sa focus().
+<input ref="newTaskInput" placeholder="Add new task">
+setup() {
+	// newTaskInput ne sluzi za cuvanje vrednosti nego sluzi kao referenca ka HTML elementu i preko ove reference imamo pristup html elementu i manipulisemo njime
+	const newTaskInput = ref(null);
+	onMounted(() => {
+		newTaskInput.value.focus();
+	});
+	return {
+		newTaskInput
+	}
+},
+
+U aplikaciji se radi sa varijablom tasks koja je niz objekata:
+const tasks = ref([
+	{
+		id: 1,
+		description: "Buy groceries",
+		priority: "High",
+		done: false
+	}
+]);
+
+<input type="checkbox" v-model="task.done"> - ovo je html checkbox element a task objekat ima property koji je boolean. Posto je html element sa task objektom vezan preko v-model kada se klikne na check boks preko v-model se menja stanje vue objekta. Za ovo ne mora da se definise metoda koja ce menjati stanje vue objekta.  
+
+Dinamicko menjenje CSS klasa:
+- ovde se za jedan html element evaluira vise CSS klasa
+- 'task': true => CSS klasa 'task' se uvek implementira jer je uvek true
+- 'completed': task.done => 'CSS klasa 'completed' se implementira u zavisnosti od vrednosti property-a task.done. Vrednost u task.done moze biti true ili false
+- [task.priority.toLowerCase()]: true => task objekat ima priority property koji moze biti High, Medium ili Low. Ovde se uzima vrednost property-a u koristi se toLowerCase() jer u CSS-u imamo klase high, medium i low. ako je u proeprty-u 'Medium' onda se primenjuje CSS klasa medium jer je :true.
+
+<div v-for="task in tasks" :key="task.id"
+:class="{'task': true, 'completed': task.done, [task.priority.toLowerCase()]: true}">
+-------------------------------------------------------------------------------------------------------
+--------------------------------- manipulacija DOM elementima - kraj ----------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+-------------------------------------------------------------------------------------------------------
+---------------------------------- Watchers i Side Effects - pocetak ----------------------------------
+-------------------------------------------------------------------------------------------------------
+Watchers je slicno kao computed() ali se ipak razlikuju::
+ - computed prati neku ref vrednost i kada se ona promeni u computed se izracunava nesto
+ - watchers isto prati neeku vrednost a kada se ta vrednost promeni pokrece se neka biznis logika. Kada se prommeni ono sto watch prati izvrsava se neki kod
+ - u watch moze da se prati ref vrednost ali i computed() property
+ - u computed() property-u treba samo da se izracunava nova vrednost i ne treba da ima uticaj ni na sta drugo
+ 
+ 
+Kod koji se izvrsava u watch() je callback funkcija koja prihvata dva parametra - novu vrednost i staru vrednost property-a koji se prati.
+
+Watcher, po defaultu, prati samo promenu vrednosti onoga sto prati.
+Ovaj watcher prati newTask (input field) i kada korisnik nesto kuca, menja se vrednost pa ce se izvrsiti i kod u callback funkciji.
+watch(newTask, (newValue, oldValue) => {
+	console.log('newValue: ', newValue);
+	console.log('oldValue: ', oldValue);
+})
+
+Ovaj watcher prati niz task i kada se dodaju ili uklanjaju elementi niza to nije promen avrednosti i watcher ne izvrsava kod. Promena vrednosti bi bila kada ni se u task setovao novi niz.
+watch(tasks, () => {
+	console.log('The tasks has changed');
+}); 
+
+Da bi se pratile  promene i property-a u nizu moze da se doda deep propety.
+Sa {deep: true} watch callback funkcija se izvrsava i kada se dodaju ili uklanjaju elementi niza.
+watch(tasks, () => {
+	console.log('The tasks has changed');
+}, {deep: true}); 
+
+U projektu, cemo u "watch(tasks..." dodati da se prilikom bilo kakve promene property-a tasks niza, snime podaci u local storage u browseru.
+
+Opcija {immediate: true}
+Kada je setovana opcija {immediate: true} callback funkcija ce s eodmah izvrsiti kada se mountuje komponenta a posle ce se izvrsavati kad as epromeni vrednost koji prati (todoId).
+watch(todoId, nekaFunkcija() => {
+	console.log('The tasks has changed');
+}, {immediate: true}); 
+
+U watch() moze da se prosledi vise vrednosti koje watch treba da prati.
+
+---------------------- watchEffect() ----------------------
+U watchEffect() ne mora eksplicitno da se navede vrednost koja treba da se prati. Vue ce sam da ukapira koju vrednost treba da prati i kada se ona promeni on ce pokrenuti kod koji je u watchEffect().
+
+U pvom primeru dole, vue ce videti da treba da prati promenu vrednosti todoId. Kada se promeni todoId watchEffect() ce pokrenuti kod i uradice se fetch podataka.
+watchEffect(async () => {
+	const response = await fetch(`https://jsonplaceholder.typeicode.com/todos/${todoId.value});
+	data.value = await response.data;
+);
+
+Ovo dole ce prilikom svake promene vrednosti u input polju pozivati callback funkciju i raditi console.log.
+watchEffect(() => {
+	console.log(`New value of newTask is: ${newTask.value}`);
+});
+
+watchEffect() je jednostavniji za upotrebu nego watch(). U watchEffect() treba samo da s eu kodu koristi neka vrednost a vue ce automatski pratiti promenu te vrednosti.
+
+-------------------------------------------------------------------------------------------------------
+------------------------------------ Watchers i Side Effects - kraj -----------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+-------------------------------------------------------------------------------------------------------
+--------------------------------------- Local storage - pocetak ---------------------------------------
+-------------------------------------------------------------------------------------------------------
+Snimanje tasks niza u localStorage.
+{ deep: true } 	- ovo mora da bude setovano da bi se svaka promena property-a niza snimala u localStorage
+				- ako se promeni i neki property jednog elementa niza ta promena ce s esnimiti u localStorage
+watch(tasks, () => {
+	localStorage.setItem('tasks', JSON.stringify(tasks.value));
+}, { deep: true });
+
+U localStorage se podaci cuvanju u key:value parovima. I key i value moraju da budu stringovi. Zato, kada se snimaju podaci u localStorage, koristi se JSON.stringify() a kada se uzimaju podaci koristi se JSON.parse().
+
+localStorage item moze da se kreira i prilikom pokretanja aplikacije. Kada se pokrene aplikacija i setup() metoda kreira se konstanta "const tasks = ref()". U ovom trenutku localStorage je dostupan i item moze da se dohvati.
+Ako u localStorage ne postoj item 'tasks' onda ce se inisijalizovati prazan niz.
+const tasks = ref(JSON.parse(localStorage.getItem('tasks') ?? '[]'));
+
+localStorage.getItem('tasks') ?? '[]' - sa ?? se proverava da li je localStorage.getItem('tasks') undefined i ako jeste onda se kreira prazan niz.
+-------------------------------------------------------------------------------------------------------
+---------------------------------------- Local storage - kraj -----------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+---------------------------------------------------- projekat Event Booking App - pocetak ----------------------------------------------------
+-------------------------------------------------------------------------------------------------------
+-------------------------------- Creating project using Vite - pocetak --------------------------------
+-------------------------------------------------------------------------------------------------------
+https://vite.dev/guide/
+https://tailwindcss.com/
+
+Vite je build tool koji nam obezbedjuje:
+ - live server
+ - build komandu kojom se svi fajlovi spakuju tako da mogu da se deploy-uju
+
+Kreira se novi projekat koristeci Vite:
+ - npm create vite@5.2	- ova kommanda pokrece kreiranje aplikacije
+	- Ok to proceed? - Yes
+	- Project name: event-booking
+	- Select a framework: bira se Vue
+	- Select a variant: bira se 'Costumize with create-vue'
+	- Add typescript: bira se No
+	- Add JSX Support: No
+	- Add Vue Router for Single Page Application development: No
+	- Add Pinia for state management: No
+	- Add Vitest for Unit Testing: No
+	- Add an End-to-End Testing Solution: No
+	- Add ESLint for code quality: Yes
+	- Add Prettier for code formatting: Yes
+	- Add Vue DevTools 7 extensions for debugging: Yes
+	- Enter
+ - cd event-booking - da se udje u folder projekta
+ - npm instal - da se instaliraju dependeny
+ - npm run dev - pokretanje aplikacije
+ 
+ - instalacija taiwind-a u vue vite projekat
+	- npm install -D tailwindcss postcss autoprefixer
+	- npm install tailwindcss @tailwindcss/vite
+	- sada u vite.config.js treba dodati "import tailwindcss from '@tailwindcss/vite'" i "tailwindcss()," pa vite.config.js treba da bude:
+	- u main.css treba da se doda "@import "tailwindcss";"
+	
+ - instalacija Lucide biblioteke za ikonice
+	- Lucide nam obezbedjuje ikonice koje su svg tipa
+	- 'npm install lucide-vue-next'
+	- https://lucide.dev/icons/  - na ovom linku moze da se radi pretraga ikona
+	- lucide ikone mogu da se koriste i bez instalacije biblioteke:
+		- npr. nasao sam loader ikonu na https://lucide.dev/icons/loader-circle
+		- ide se na copy SVG i to se pastuje u html
+	- posto koristimo vue ide se na copy VUE i i kada se ide paste u kod dobijamo <LoaderCircle />
+	- u <script setup> komponenta LoaderCircle mora da se uveze sa "import { LoaderCircle, Check } from 'lucide-vue-next';"
+	
+	
+	------------------------- vite.config.js - pocetak -------------------------
+	import { fileURLToPath, URL } from 'node:url'
+	import { defineConfig } from 'vite'
+	import vue from '@vitejs/plugin-vue'
+	import vueDevTools from 'vite-plugin-vue-devtools'
+	import tailwindcss from '@tailwindcss/vite'
+
+	// https://vite.dev/config/
+	export default defineConfig({
+	  plugins: [
+		vue(),
+		vueDevTools(),
+		tailwindcss(),
+	  ],
+	  resolve: {
+		alias: {
+		  '@': fileURLToPath(new URL('./src', import.meta.url))
+		},
+	  },
+	})
+	------------------------- vite.config.js - kraj -------------------------
+
+
+Za stilizivanje se koristi Tailwind CSS - https://tailwindcss.com/docs/installation/using-vite
+
+U projektu se koristi Composition API sa <script setup></script> tagovima. Posto se koristi <script setup> iz <script></script> ne moraju da se vracaju varijable sa return{}. Sve sto je definisano u <script setup></script> dostupno je u <template>.
+
+Ako u CSS fajlovima imamo krivudavu liniju ispod koda znaci da lint ne prepoznaje komandu. Ide se u folder .vscode u fajl settings.json i dodaje se   "css.lint.unknownAtRules": "ignore" da se ignorisu ove greske. Treba da bude:
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "css.lint.unknownAtRules": "ignore"
+}
+
+U root-u projekta je jsonconfig.json fajl u kome je definisan root folder i ovo moze da se koristi za definisanje lokacije fajlova kada se importuju u projektu.
+U jsonconfig.json je:
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "exclude": ["node_modules", "dist"]
+}
+
+"@/*": ["./src/*"] - definisano je da je src folder root folder i kada se prilikom importa stavi @ misli se na src. Ovako mogu da se definisu apsolutne putanje do fajlova a ne relativne (./neki-folder).
+Kada se definisu relativne putanje do foldera onda se krece od lokacije fajla u kojem se radi import.
+
+Umesto: import EventCard from './components/EventCard.vue';
+bice: import EventCard from '@/components/EventCard.vue';
+
+Ako se koristi <script setup> onda defineProps i defineEvents ne mora da se importuje.
+
+Definisanje props-a i emitera u komponenti:
+<script setup>
+defineProps({
+  title: String,
+  when: String,
+  description: String,
+});
+// u defineEmits se definise niz eventa koji se emituju
+defineEmits(['register']);
+</script>
+
+-------------------------- koriscenje slot-a --------------------------
+<slot></slot> nam omogucava da u vec postojecu komponentu prosledimo nesto izmedju slot tagova.
+
+Primer: sada imamo komponentu RoundButton koju smo mi kreirali i u nju prosledjujemo string podatak proz props property 'label'. Ono sto se prosledi u props.label to je tekst koji ce biti ispisan na dugmetu.
+Ovako je sada:
+<RoundButton label="Register" @click="$emit('register')" /> - koristi se komponenta i u props se prosledjuje podatak
+<template>
+  <button
+    class="text-sm font-medium border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-200"
+    @click="$emit('click')"
+  >
+    {{ label }}
+  </button>
+</template>
+
+Kada se koristi <slot> komponenta mora da ima otvarajuci i zatvarajuci tag.
+Kada se koristi slot pored 'Register' moze da se prosledi i ikona ili nesto drugo. Kada se koristi props to nije moguce.
+Sada je: 
+<RoundButton @click="$emit('register')">
+Register
+</RoundButton>
+<template>
+  <button
+    class="text-sm font-medium border border-gray-200 rounded-full px-3 py-1 hover:bg-gray-200"
+    @click="$emit('click')"
+  >
+    <slot>OK</slot> -- OK je default podatak koji ce se prikazati ako se nista ne prosledi u slot
+  </button>
+</template>
+
+-------------------------- named slot --------------------------
+Named slot se koristi da se u komponentu u kojoj je <slot>, prosledi podatak u taj slot tj. mozemo da gadjamo slot u koji prosledjujemo podatak. Ako imamo vise slotova mozemo da u njih saljemo podatke po njihovim imenima.
+
+Slotu odredjujemo name - ovo je u komponenti u kojoj je definisan slot. 
+<slot name="header"></slot>
+
+
+U taj slot prosledjujemo podatak - ovo je u komponenti u koju se importuje komponenta koja sadrzi slot.
+<template v-slot:header></template>
+ili 
+<template #header></template>
+
+Kada se prosledjuje podatak za slot on mora da bude u template tagu.
+<Component>
+	<template #header>Ovo ce se prikazati u slot-u</template>
+</Component>
+ - sa #header gadjamo slot-a
+ - "Ovo ce se prikazati u slot-u" je podatak koji se prosledjuje i prikazuje u slot-u
+ 
+Ako u komponenti imamo vise slotova i svima smo setovali name a jedan ostavili bez name-a (samo <slot></slot>). Ovaj slot bez name-a moze da se gadje sa #default tj. <template #default></template>. 
+
+Da li ce se neki slot prikazivati ili ne moze da se odredi na osnovu toga da li je prosledjen podatak u slot. RoundedCard je komponeta u kojoj su <slot> tagovi u kojima se prikazuju podaci koji se proslede. Sa v-if="$slots.header" se odredjuje da li ce  se slot prikazati ili ne.
+Sa $slots.header moze i css kalsa dinamicki da se izracunava.
+  <RoundedCard>
+    <!-- v-if="$slots.header" -> ako se prosledjije (ako postoji) podatak header ovaj h3 element se prikazuje -->
+    <h3 v-if="$slots.header" class="p-4 font-medium text-xl border-b border-gray-200">
+      <slot name="header"></slot>
+    </h3>
+    <!-- 'p-4' klasa se uvek primenjuje a ostale ('border-b border-gray-200') samo kada postoji (kada se prosledjuje) podatak u $slots.footer -->
+    <div v-if="$slots.default" :class="{ 'p-4': true, 'border-b border-gray-200': $slots.footer }">
+      <slot></slot>
+    </div>
+    <div v-if="$slots.footer" class="p-4">
+      <slot name="footer"></slot>
+    </div>
+  </RoundedCard>
+
+-------------------------------------------------------------------------------------------------------
+---------------------------------- Creating project using Vite - kraj ---------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+-------------------------------------------------------------------------------------------------------
+--------------------------------------- Tailwind CSS - pocetak ----------------------------------------
+-------------------------------------------------------------------------------------------------------
+Instalacija taiwind-a u vue vite projekat
+	- npm install -D tailwindcss postcss autoprefixer
+	- npm install tailwindcss @tailwindcss/vite
+	- sada u vite.config.js treba dodati "import tailwindcss from '@tailwindcss/vite'" i "tailwindcss()," pa vite.config.js treba da bude:
+	- u main.css treba da se doda "@import "tailwindcss";"
+	
+	------------------------- vite.config.js - pocetak -------------------------
+	import { fileURLToPath, URL } from 'node:url'
+	import { defineConfig } from 'vite'
+	import vue from '@vitejs/plugin-vue'
+	import vueDevTools from 'vite-plugin-vue-devtools'
+	import tailwindcss from '@tailwindcss/vite'
+
+	// https://vite.dev/config/
+	export default defineConfig({
+	  plugins: [
+		vue(),
+		vueDevTools(),
+		tailwindcss(),
+	  ],
+	  resolve: {
+		alias: {
+		  '@': fileURLToPath(new URL('./src', import.meta.url))
+		},
+	  },
+	})
+	------------------------- vite.config.js - kraj -------------------------
+
+Postoji VS code plugin za tailwind: 'Tailwind CSS IntelliSense'
+ - class="container" - kada se nekom elementu stavi klasa container on ce se sam centrirati unutar svog parent-a
+ - class="bg-indigo-500" - setovanje boje pozadine nekom html elementu
+ - class="text-4xl" - odredjivanje velicine teksta. l je malo slovo L
+ - class="text-4xl text-amber-900 font-bold text-center"- odredjivanje velicine, boje, boldovanje i pozicioniranje teksta
+ - class="font-medium" - malo boldovano
+ 
+Grid sistem u tailwind-u:
+    <section class="grid grid-cols-3 gap-8">
+      <EventCard v-for="i in 8" :key="i" />
+    </section>
+Ovo gore ce renderovati 8 EventCard komponenti koje ce biti rasporedjene u tri kolone. Definisan je i razmak izmedju njih.
+Imacemo dva reda sa po 3 komponente i u trecem redu ce biti preostale dve komponente.
+
+class="grid grid-cols-3 gap-8" - ovo ce kreirati grid koji ima tri kolone
+- grid - ovo znaci da cemo koristiti grid
+- grid-cols-3 - elementi ce biti u tri kolone
+- gap-8 - ovo je velicina razmaka izmedju elemenata
+-------------------------------------------------------------------------------------------------------
+----------------------------------------- Tailwind CSS - kraj -----------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+-------------------------------------------------------------------------------------------------------
+---------------------------------------- Data fetch - pocetak -----------------------------------------
+-------------------------------------------------------------------------------------------------------
+Za simulaciju API-a sa kojeg se uzimaju podaci koristi se JSON server. JSON server je biblioteka koja simulira API ka kojem se salje request i on vraca podatke. JSON server cuva podatke u fajlu db.json. JSON server moze da simulira kasnjenje responsa ali za ovo mora da se instalira verzija 0.17.4.
+JSON server se instalira kao dev dependency: 
+	- npm install --save-dev json-server@0.17.4
+	- u package.json u "scripts": {} se dodaje:
+		- "server": "json-server --watch db.json --delay=3000 --port 3001"
+			- "server": "json-server => sa komandom 'server' ce se pokretati json-server
+			- --watch db.json - json-server treba da prati db.json fajl jer su u njemu podaci
+			- --delay=3000 - setuje se lag od 3 sekunde za response servera 
+			- --port 3001 - port na kome ce raditi server
+	- u root folderu projekta kreiramo fajl db.json
+	- 'npm run dev' - da se pokrene vue aplikacija
+	- kreira se jos jedan terminal na + u terminalu i trebamo d abudemo pozicionirani u root-u proketa pa:
+	- 'npm run server' da se pokrene json-server
+	- kada se ide na url: http://localhost:3001/events imacemo delay od 3 sekunde i onda ce se pojaviti podaci
+
+Pokrenu se json-server i vue aplikacija. Ovo treba uraditi u dva terminala:
+- npm run dev
+- npm run json-server 	
+
+U db,json je:
+{
+  "events": [
+    {
+      "id": "1",
+      "title": "Rails Conference 2024",
+      "date": "2024-05-20",
+      "description": "Join us for a day of insightful talks and networking with industry leaders in technology.",
+      "location": "Convention Center, Downtown"
+    },
+    {
+      "id": "2",
+      "title": "Vue Conference 2023",
+      "date": "2024-05-20",
+      "description": "Join us for a day of insightful talks and networking with industry leaders in technology.",
+      "location": "Convention Center, Downtown"
+    },
+    {
+      "id": "3",
+      "title": "PHP Conference 2022",
+      "date": "2024-05-20",
+      "description": "Join us for a day of insightful talks and networking with industry leaders in technology.",
+      "location": "Convention Center, Downtown"
+    },
+    {
+      "id": "4",
+      "title": "Rust Conference 2021",
+      "date": "2024-05-20",
+      "description": "Join us for a day of insightful talks and networking with industry leaders in technology.",
+      "location": "Convention Center, Downtown"
+    }
+  ],
+  "bookings": []
+}
+
+
+--------------------- GET metoda ----------------------
+Fetch podata u App.vue:
+<script setup>
+import { onMounted, ref } from 'vue';
+import EventCard from '@/components/EventCard.vue';
+import BookingItem from '@/components/BookingItem.vue';
+
+const events = ref([]);
+
+const fetchEvents = async () => {
+  // posto je await response ce kasniti 3 sekunde posto smo takav delay podesili u json-serveru
+  const response = await fetch('http://localhost:3001/events');
+  events.value = await response.json();
+  console.log(events.value);
+};
+
+onMounted(() => {
+  fetchEvents();
+});
+</script>
+<style scoped></style>
+
+U konzoli brovsera ce se pojaviti Proxy(Array) {0: {…}, 1: {…}, 2: {…}, 3: {…}} za zadrskom od 3 sekunde.
+
+U json termnminalu je: GET /events 200 3026.536 ms - 981
+
+--------------------- POST metoda ----------------------
+Post request se salje na url http://localhost:3001/bookings. Posto je u url-u /bookings json-server ce objekat newBookings dodati u bookings[] niz.
+Slanje post requesta:
+const handleRegistration = async (event) => {
+  const newBooking = {
+    id: Date.now().toString(),
+    userId: 1,
+    eventId: event.id,
+    eventTitle: event.title,
+  };
+
+  await fetch('http://localhost:3001/bookings', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      ...newBooking,
+      status: 'confirmed',
+    }),
+  });
+};
+
+U json termnminalu je: POST /bookings 201 3061.754 ms - 124
+-------------------------------------------------------------------------------------------------------
+------------------------------------------ Data fetch - kraj ------------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+-------------------------------------------------------------------------------------------------------
+--------------------------------------- Optimistic UI - pocetak ---------------------------------------
+-------------------------------------------------------------------------------------------------------
+Optimistic UI - UI se odmah menja a tek nakon toga se proverava da li je request uspesan (da li je bilo response-a od API-a) i nakon uspesnog requesta sa implementiraju promene u UI.
+Optimistic UI - sa ovime se postize da korisnik dobija instant feedback od aplikacije i nema zastoja u radu dok se ceka response od API-a.
+Primer: 
+- scenario: U listi eventa korisnik moze da klikne na dugme Register da bi se prijavio za neku konferenciju. Kada klikne na Register ta konferencija se dodaje u bookings listu za tog korisnika.
+- Oprimistic UI: kada korisnik klikne na Register dugme, vue aplikacija odmah dodaje taj event u bookings listu i taj event je odmah vidljiv u bookings listi. Istovremeno, vue aplikacija salje POST request API-u na http://localhost:3001/bookings i nakon responsa menja UI po potrebi. Ako je booking objekat uspesno dodat u listu onda nema promena a ako je doslo do neke greske onda se korisnik obavestava a event se uklanja iz bookings liste.
+-------------------------------------------------------------------------------------------------------
+----------------------------------------- Optimistic UI - kraj ----------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+-------------------------------------------------------------------------------------------------------
+------------------------------------ Dynamic components - pocetak -------------------------------------
+-------------------------------------------------------------------------------------------------------
+https://vuejs.org/guide/essentials/component-basics#dynamic-components
+
+Dinamicki se odredjuje sta ce da se prikaze od ikona. U komponent BookingItem se ne osnovu podatka status odredjuje da li ce se prikazati ikona LoaderCircle ili Check.
+
+Koristi se Vue <component :is="" /> da se dinamicki prikaze komponenta. Koja ce se komponenta prikazati izracunava se u computed().
+<component :is="icon" :class="{ 'animate-spin': pending }" />
+
+<template>
+  <SectionCard>
+    <div class="flex justify-between">
+      <div class="flex space-x-2">
+        <div>{{ title }}</div>
+        <!-- <component :is="icon" - sa ovime se prikazuje komponenta koja je izracunata u icon -->
+        <!-- ako je pending == true onda se implementira animacija nad ikonom -->
+        <div><component :is="icon" :class="{ 'animate-spin': pending }" /></div>
+      </div>
+      <RoundButton variant="danger" @click="$emit('cancelled')">Cancel</RoundButton>
+    </div>
+  </SectionCard>
+</template>
+<script setup>
+import { computed } from 'vue';
+import SectionCard from '@/components/SectionCard.vue';
+import RoundButton from '@/components/RoundButton.vue';
+import { LoaderCircle, Check } from 'lucide-vue-next';
+
+const props = defineProps({
+  title: String,
+  status: String,
+});
+
+defineEmits(['cancelled']);
+
+// na osnovu podatka koji je prosledjen u propa (pending ili confirmed) izracunava se true ili false
+const pending = computed(() => props.status === 'pending');
+// ovde se izracunava koja komponenta/ikona ce se koristiti
+const icon = computed(() => (pending.value ? LoaderCircle : Check));
+</script>
+-------------------------------------------------------------------------------------------------------
+--------------------------------------- Dynamic components - kraj -------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+-------------------------------------------------------------------------------------------------------
+---------------------------------------- Composables - pocetak ----------------------------------------
+-------------------------------------------------------------------------------------------------------
+U Vue-u ref, reactivity i funkcije nisu ograniceni na komponente nego su dostupni u celoj aplikaciji.
+Composable je dostupan u composition API ali nije dostupan u optios API.
+
+Composable je funkcija koja je dostupna u svim funkcijama i stanje unutar funkcije moze da se deli izmedju komponenti. Ovo cemo iskoristiti da se unutar funkcije cuva lista eventova i ta ista lista ce biti dostupna u svim komponentama.
+Kada se ne bi koristio composable onda bi lista morala da se salje izmedju komponenti a to postaje vrlo komplikovano. 
+
+U src folderu kreiramo folder composables i u njemu fajl useBookings.js. Po konvenciji composables fajlovi se imenuju tako da pocinju sa use...
+Po konvenciji composable se kreira kao funkcija iz koje se sa return vraca objekat u mome su varijable. Kada se ovako kreiraju i koriste varijable one su globalne (na nivou aplikacije) i mogu imati samo jednu instancu.
+Svako ko koristi varijable bookings ili bookingsLoading iz useBookings koristi jednu te istu instancu. Jedna instanca je kada se composable definise kao dole.
+
+Iz App.vue u useBookings.js premestamo bookings i bookingsLoading.
+
+-------------- useBookings.js - pocetak --------------
+import { ref } from 'vue';
+
+const bookings = ref([]);
+const bookingsLoading = ref(false);
+
+export default function useBookings() {
+    return { bookings, bookingsLoading };
+}
+-------------- useBookings.js - kraj --------------
+
+Sada u App.vue moze da se koristi composable tako sto se importuje pa pozove funkcija koja sa return vraca objekat iz composable. Koristi se destruktuiranje da se uzmu property-i iz composable objekta.
+
+import useBookings from '@/composables/useBookings';
+const { loadnig, bookings } = useBookings();
+
+
+U composable se premesta i handleRegistration funkcija i tada moze da se koristi u svim komponentama. handleRegistration menja stanje u event listi i kada se koristi iz composable-a moze da se koristi iz vise komponenti i menja stanje u istoj event listi. Ovako ne moraju da se koristi emit da bi se promena iz jedne komponente slala u drugu. 
+-------------------------------------------------------------------------------------------------------
+----------------------------------------- Composables - kraj ------------------------------------------
+-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------- projekat Event Booking App - kraj ----------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------- projekat Vue Settings - pocetak ------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------
+------------------------------------ kreiranje projekta - pocetak -------------------------------------
+-------------------------------------------------------------------------------------------------------
+Kreiranje projekta vue-settings:
+1. kreiranje foldera i projekta u njemu
+ - npm create vue@latest
+	- Project name: vue-settings
+	- Add Typescript: Yes
+	- Add JSX Support: No
+	- Add Router: No
+	- Add Pinia for state management: No
+	- Add Vitest for unit testing: No
+	- Add as End-to-End Testing dolution: No
+	- Add ESLint for code quality: Yes
+	- Add Prettier for code formatting: Yes
+	- Add Vue DevTools 7 extension for debugging: Yes
+ - cd event-booking - da se udje u folder projekta
+ - npm install - da se instaliraju dependency
+ - npm run dev - pokretanje aplikacije
+
+2. Kada se kreira projekat udje se u folder vue-settings i doda se taillwind:
+(uputstvo se moze naci i na https://www.fadocodecamp.com/posts/adding-tailwind-vite-vue)
+ - npm install -D tailwindcss postcss autoprefixer
+ - npm install -D tailwindcss@3.4.17
+ - npx tailwindcss init -p	- da se inicijalizuje taillwind
+
+3. U root-u projekta je fajl taillwind.config.js i u njemu u "content:[]" treba dodati redove tako da bude:
+content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
+ 
+4. U folderu src/assets: 
+ - treba obrisati fajlove: base.css i logo.svg
+ - iz fajla main.css treba obrisati sve a dodati:
+	- @taillwind base;
+	- @taillwind components;
+	- @taillwind utilities;
+ - ispod ova tri reda koja su dodata je krivudava linija koju ESLint prikazuje. Da bi se to uklonilo ide se u folder .vscode (u rootu projekta) i dodaje se red "css.lint.unknownAtRules": "ignore"
+ 
+5. Promene u components folderu i App.vue fajlu:
+ - iz components foldera mogu da se obrisu svi fajlovi
+ - iz App.vue se brise sve i ostaje samo:
+<template>
+  <main>Hellos</main>
+</template>
+<script setup lang="ts"></script>
+
+Po lang="ts" se vdi da se koristi Typescript.
+-------------------------------------------------------------------------------------------------------
+------------------------------------- kreiranje projekta - kraj ---------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------------------------------
+-------------------------- definisanje props i events sa Typescript - pocetak -------------------------
+-------------------------------------------------------------------------------------------------------
+Dokumentacija: https://vuejs.org/guide/typescript/composition-api.html#typing-component-emits
+
+U defineProps<{}> se prosledjuje objekat u kojem su definisani property i tip podatka property-a.
+Kreira se komponenta TabLink.vue i u njoj se definise defineProps:
+<template></template>
+<script setup lang="ts">
+defineProps<{
+    currentTab: string;
+    tab: {
+        name: string;
+        label: string;
+    }
+}>();
+defineEmits<{
+  change: [id: number]
+  update: [value: string]
+}>();
+</script>
+
+Gore su definisana dva property-a: currentTab koji je tipa string i tab koji je objekat koji sadrzi svoja dva property-a.
+
+Sa defineEmits<{}>(); se definisu eventi koje zelimo da emitujemo. 
+change je event koji emitujemo i ovaj event prihvata (i salje) podatak id koji mora biti tipa number.
+
+U fajlu types.ts kreiramo interfejse kojima definisemo objekte koje cemo koristiti u aplikaciji.
+Ovde se definise Tab interfejs i TabKey enum.
+export type TabKey = 'General' | 'Notifications' | 'Privacy';
+export interface Tab {
+  key: TabKey;
+  label: string;
+  component: Component;
+} 
+
+U vue-u postoji tip podatka Component. Tip podatka Component moze da se iskoristi da dinamicki prikazujemo neku komponentu.
+
+U App.vue se dinamicki uzima komponenta po vrednosti u currentTab.value.
+
+<template>
+  <main class="max-w-2xl mx-auto px-4">
+    <nav class="font-medium text-center text-gray-500 border-b border-gray-200 mb-4">
+      <ul class="flex flex-wrap -mb-px">
+        <li v-for="tab in tabs" :key="tab.key">
+          <TabLink :tab="tab" :currentTab="currentTab" @click="currentTab = tab.key" />
+        </li>
+      </ul>
+    </nav>
+    <component :is="currentTabComponent"></component>
+  </main>
+</template>
+
+<script>
+const tabs: Tab[] = [
+  {
+    key: 'General',
+    label: 'General',
+    component: GeneralSettings,
+  },
+  {
+    key: 'Notifications',
+    label: 'Notifications',
+    component: NotificationsSettings,
+  },
+  {
+    key: 'Privacy',
+    label: 'Privacy',
+    component: PrivacySettings,
+  },
+];
+
+// vrednost u currentTab je string i on moze biti neki od stringova koji su definisani u enum TabKey
+const currentTab = ref<TabKey>('General');
+// gleda se koja je vrednost/string u currentTab i po toj vrednosti se uzima komponenta i prikazuje kao aktivan tab
+const currentTabComponent = computed(() => tabs.find(tab => tab.key === currentTab.value)?.component);
+</script>
+-------------------------------------------------------------------------------------------------------
+----------------------------------- dinamicka komponenta - pocetak ------------------------------------
+-------------------------------------------------------------------------------------------------------
+Sa ovim gore u aplikaciji cemo imati nav bar u kome ce biti tri taba (General, Notifications, Privacy) na koje moze da se klikne a sadrzaj u main delu ce se menjati u odnosu na to na koji tab je kliknuto.
+Ako zelimo da imamo tranziciju (fade-out - fade-in) sadrzaja u main delu onda u App.vue dinamicka kompoonenta treba da se wrapuje u <Transaction> komponentu. Transition je komponenta iz vue biblioteke.
+App.vue:
+    <Transition name="fade" mode="out-in">
+      <component :is="currentTabComponent"></component>
+    </Transition> 
+U style App.vue treba dodati css:
+<style scoped>
+/* we will explain what these classes do next! */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>
+Komponente iz kojih se prikazuje sadrzaj koji treba da bude fade-in fade-out u template moraju da imaju root element tj. u <template></template> ne moze da bude samo sadrzaj. Moze da se stavi samo div.
+<template>
+  <div>General</div>
+</template> 
+
+Iako imamo vise elemenata u template moramo da imamo samo jedan root elemny.
+<template>
+  <div>
+	General
+	<p>neki tekst...</p>
+  </div>
+</template> 
+
+U CSS-u klasa je nazvana .fade-enter-active zato sto je smo u Transaction komponenti setovali name="fade". Ako zelimo da imamo vise razlicitih tranzicija mozemo im setovati razlicita imena.
+-------------------------------------------------------------------------------------------------------
+------------------------------------- dinamicka komponenta - kraj -------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+-------------------------------------------------------------------------------------------------------
+----------------------------------- KeepAlive komponenta - pocetak ------------------------------------
+-------------------------------------------------------------------------------------------------------
+Kada u jednom tabu/komponenti imamo "const nekaVrednost - ref(0);" i nekaVrednost promenimo na 1 a nakon toga odemo na drugi tab onda se radi unmount prvog taba a mount drugog i ono sto je u nekaVrednost se gubi. Kada se vratimo na prvi tab opet se radi mount i nekaVrednost je 0.
+Ako zelimo da nam ostanu vrednosti u ref() onda moze da se koristi vue komponenta KeepAlive. Komponenta u kojij su vrednosti koje zelimo da budu sacuvane se wrappuje u KeepAlive.
+    <FadeTransition name="fade" mode="out-in">
+      <KeepAlive>
+        <component :is="currentTabComponent"></component>
+      </KeepAlive>
+    </FadeTransition>  
+-------------------------------------------------------------------------------------------------------
+------------------------------------- KeepAlive komponenta - kraj -------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+-------------------------------------------------------------------------------------------------------
+--------------------------------------- localStorage - pocetak ----------------------------------------
+-------------------------------------------------------------------------------------------------------
+U ovoj aplikaciji za cuvanje podataka se koristi localStorage.
+Za kreiranje ili ucitavanje localStorage se koristi IIFE (immediatly invoced function expression) funkcija koja ucitava podatke iz localStorage ili ga kreira ako ne postoji. 
+IIFE (immediatly invoced function expression) je funkcija koja se izvrsava bez poziva i izvrsava se prilikom pokretanja aplikacije.
+IIFE je: (() => { ... kod koji se izvrsava ... })();
+
+U composable fajlu useSettings.ts je:
+// inicijalizovanje podataka
+const general = ref<GeneralSettings>(
+  (() => {
+    const stored = localStorage.getItem('general');
+    // ako u localStorage postoji item pod kljucem 'general' onda vraca njega a ako ne postoji onda vraca default objekat
+    return stored !== null
+      ? JSON.parse(stored)
+      : {
+          username: '',
+          email: '',
+          about: '',
+          gender: 'male',
+          country: 'Other',
+        };
+  })(),
+);
+
+// sa watch() postizemo to da se prilikom svake promene podataka u localStorage upise ta promena
+// prati se promena vrednosti general konstante i izvrsava se kod u (value) => {}
+// sa {deep:true} setujemo da se prate promene property-a general objekta
+watch(
+  general,
+  (value) => {
+    localStorage.setItem('general', JSON.stringify(value));
+  },
+  { deep: true },
+);
+-------------------------------------------------------------------------------------------------------
+----------------------------------------- localStorage - kraj -----------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+-------------------------------------------------------------------------------------------------------
+------------------------------------ Toast notifikacije - pocetak -------------------------------------
+-------------------------------------------------------------------------------------------------------
+Toast notifikacija je prozor koji se pojavljuje nakon neke akcije korisnika. Ovaj prozor sadrzi neku informaciju ili animaciju i sam se zatvara nakon nekog vremene ili korisnik moze sam da ga zatvori.
+Za kreiranje toast notifikacija koristice se NuxtUI biblioteka.
+Za prikazivanje toast notifikacije koristice se <teleport> komponenta koja sluzi da neku nasu komponentu prebacimo (teleportujemo) u bilo koji DOM <body> element i da je apsolutno pozicioniramo u body-u.
+
+Kada se koristi komponenta Teleport u tag se dodaje parametar gde zelimo da teleportujemo komponentu.
+Dole je komponenta koja predstavlja notifikaciju i nu zelimo da prikazemo u body-u pa se zato dodaje to="body".
+
+U projektu kreiramo komponentu NotificationList.vue koja ce sadrzati listu notifikacija. Kada se u aplikaciji dogodi nesto (klik ili neka druga akcija) kreira se notifikacija i dodaje u listu. Ove notifikacije se prikazuju jedna ispod druge i nakon nekog vremene (5 sekundi) same nestaju ili korisnik moze da ih zatvori klikom.
+<template>
+  <Teleport to="body">
+    <ol class="notification-list">
+      <li v-for="n in notifications" :key="n.id" class="notification-item">
+        <div class="text-sm font-semibold">
+          {{ n.message }}
+        </div>
+        <button @click="removeNotification(n.id)" class="notification-ack-button">OK</button>
+      </li>
+    </ol>
+  </Teleport>
+</template>
+
+<script setup lang="ts">
+import { useNotifications } from '@/composables/useNotifications';
+
+const { notifications, removeNotification } = useNotifications();
+</script>
+
+Ova komponenta ce uzeti niz notifikacija koje su u notifications i od svake notifikaxije kreira jedan <li> element. Sa CSS-om se taj li stilizuje u toast notifikaciju.
+Posto se komponenta NotificationList aposlutno pozicionira u body-u onda <NotificationList /> moze da se doda bilo gde u nekoj drugoj komponenti.
+Gde god da se doda NotificationList ona ce zbog <Teleport> komponente biti dodata u body.
+
+<NotificationList /> se dodaje u App.vue. U fajlovima GeneralSettings.vue, NotificationsSettings.vue i PrivacySettings.vue su forme. Kda se podaci unesu u forme klokom na Save dugme (@submit.prevent="save") poziva se save metoda koja poziva addNotification metodu i prosledjuje joj poruku koja treba da se prikaze u notifikaciji. Komponenta <NotificationList /> je dodata samo u App.vue a iz svih ostalih komponenti se poziva metoda za kreiranje notifikacije i ta notifikacija se prikazuje u body-u.
+
+U GeneralSettings.vue je;
+<template>
+  <div>
+    <h2 class="text-2xl mb-4">General</h2>
+    <form class="space-y-4 mx-auto" @submit.prevent="save">
+      <div>
+		...		
+      </div>
+      <button type="submit" class="btn-primary">Save</button>
+    </form>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { useNotifications } from '@/composables/useNotifications';
+import { useSettings } from '@/composables/useSettings';
+
+const { general } = useSettings();
+const { addNotification } = useNotifications();
+
+const save = () => {
+  addNotification(`General settings were saved successfully.`);
+};
+</script>
+-------------------------------------------------------------------------------------------------------
+-------------------------------------- Toast notifikacije  - kraj -------------------------------------
+-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------- projekat Vue Settings - kraj --------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+---------------------------------------------------- projekat Recepie Book - pocetak ------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------
+------------------------------------ kreiranje projekta - pocetak -------------------------------------
+-------------------------------------------------------------------------------------------------------
+Kreiranje projekta vue-settings:
+1. kreiranje foldera i projekta u njemu
+ - npm create vue@latest
+	- Project name: vue-settings
+	- Add Typescript: Yes
+	- Add JSX Support: No
+	- Add Router: No
+	- Add Pinia for state management: No
+	- Add Vitest for unit testing: No
+	- Add as End-to-End Testing dolution: No
+	- Add ESLint for code quality: Yes
+	- Add Prettier for code formatting: Yes
+	- Add Vue DevTools 7 extension for debugging: Yes
+ - cd event-booking - da se udje u folder projekta
+ - npm install - da se instaliraju dependency
+ - npm run dev - pokretanje aplikacije
+
+2. Kada se kreira projekat udje se u folder vue-settings i doda se taillwind:
+(uputstvo se moze naci i na https://www.fadocodecamp.com/posts/adding-tailwind-vite-vue)
+ - npm install -D tailwindcss postcss autoprefixer
+ - npm install -D tailwindcss@3.4.17
+ - npx tailwindcss init -p	- da se inicijalizuje taillwind
+
+3. U root-u projekta je fajl taillwind.config.js i u njemu u "content:[]" treba dodati redove tako da bude:
+content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
+ 
+4. U folderu src/assets: 
+ - treba obrisati fajlove: base.css i logo.svg
+ - iz fajla main.css treba obrisati sve a dodati:
+	- @taillwind base;
+	- @taillwind components;
+	- @taillwind utilities;
+ - ispod ova tri reda koja su dodata je krivudava linija koju ESLint prikazuje. Da bi se to uklonilo ide se u folder .vscode (u rootu projekta) i dodaje se red "css.lint.unknownAtRules": "ignore"
+ 
+5. Promene u components folderu i App.vue fajlu:
+ - iz components foldera mogu da se obrisu svi fajlovi
+ - iz App.vue se brise sve i ostaje samo:
+<template>
+  <main>Hellos</main>
+</template>
+<script setup lang="ts"></script>
+
+Po lang="ts" se vdi da se koristi Typescript.
+-------------------------------------------------------------------------------------------------------
+------------------------------------- kreiranje projekta - kraj ---------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------- projekat Recepie Book - kraj --------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
