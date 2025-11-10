@@ -289,7 +289,7 @@ Za stilizivanje se koristi Tailwind CSS - https://tailwindcss.com/docs/installat
 
 U projektu se koristi Composition API sa <script setup></script> tagovima. Posto se koristi <script setup> iz <script></script> ne moraju da se vracaju varijable sa return{}. Sve sto je definisano u <script setup></script> dostupno je u <template>.
 
-Ako u CSS fajlovima imamo krivudavu liniju ispod koda znaci da lint ne prepoznaje komandu. Ide se u folder .vscode u fajl settings.json i dodaje se   "css.lint.unknownAtRules": "ignore" da se ignorisu ove greske. Treba da bude:
+Ako u CSS fajlovima imamo krivudavu liniju ispod koda znaci da lint ne prepoznaje komandu. Ide se u folder .vscode u fajl settings.json i dodaje se  "css.lint.unknownAtRules": "ignore" da se ignorisu ove greske. Treba da bude:
   },
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
@@ -711,13 +711,19 @@ Kreiranje projekta vue-settings:
 3. U root-u projekta je fajl taillwind.config.js i u njemu u "content:[]" treba dodati redove tako da bude:
 content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
  
-4. U folderu src/assets: 
+4. Dodavanje Tailwind-a za ovaj projekat se ostavlja za kasnije 
+ U folderu src/assets: 
  - treba obrisati fajlove: base.css i logo.svg
  - iz fajla main.css treba obrisati sve a dodati:
 	- @taillwind base;
 	- @taillwind components;
 	- @taillwind utilities;
  - ispod ova tri reda koja su dodata je krivudava linija koju ESLint prikazuje. Da bi se to uklonilo ide se u folder .vscode (u rootu projekta) i dodaje se red "css.lint.unknownAtRules": "ignore"
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "css.lint.unknownAtRules": "ignore"
+}
  
 5. Promene u components folderu i App.vue fajlu:
  - iz components foldera mogu da se obrisu svi fajlovi
@@ -992,24 +998,24 @@ const save = () => {
 -------------------------------------------------------------------------------------------------------
 ------------------------------------ kreiranje projekta - pocetak -------------------------------------
 -------------------------------------------------------------------------------------------------------
-Kreiranje projekta vue-settings:
+Kreiranje projekta recepie-book:
 1. kreiranje foldera i projekta u njemu
  - npm create vue@latest
-	- Project name: vue-settings
+	- Project name: recepie-book
 	- Add Typescript: Yes
 	- Add JSX Support: No
-	- Add Router: No
-	- Add Pinia for state management: No
+	- Add Router: Yes
+	- Add Pinia for state management: Yes
 	- Add Vitest for unit testing: No
 	- Add as End-to-End Testing dolution: No
 	- Add ESLint for code quality: Yes
 	- Add Prettier for code formatting: Yes
 	- Add Vue DevTools 7 extension for debugging: Yes
- - cd event-booking - da se udje u folder projekta
+ - cd recepie-book - da se udje u folder projekta
  - npm install - da se instaliraju dependency
  - npm run dev - pokretanje aplikacije
 
-2. Kada se kreira projekat udje se u folder vue-settings i doda se taillwind:
+2. Kada se kreira projekat udje se u folder recepie-book i doda se taillwind:
 (uputstvo se moze naci i na https://www.fadocodecamp.com/posts/adding-tailwind-vite-vue)
  - npm install -D tailwindcss postcss autoprefixer
  - npm install -D tailwindcss@3.4.17
@@ -1021,10 +1027,10 @@ content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
 4. U folderu src/assets: 
  - treba obrisati fajlove: base.css i logo.svg
  - iz fajla main.css treba obrisati sve a dodati:
-	- @taillwind base;
-	- @taillwind components;
-	- @taillwind utilities;
- - ispod ova tri reda koja su dodata je krivudava linija koju ESLint prikazuje. Da bi se to uklonilo ide se u folder .vscode (u rootu projekta) i dodaje se red "css.lint.unknownAtRules": "ignore"
+	@taillwind base;
+	@taillwind components;
+	@taillwind utilities;
+ - ispod ova tri reda koja su dodata je krivudava linija koju ESLint prikazuje. Da bi se to uklonilo ide se u folder .vscode (u rootu projekta) i settings.json dodaje se red "css.lint.unknownAtRules": "ignore"
  
 5. Promene u components folderu i App.vue fajlu:
  - iz components foldera mogu da se obrisu svi fajlovi
@@ -1035,9 +1041,404 @@ content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
 <script setup lang="ts"></script>
 
 Po lang="ts" se vdi da se koristi Typescript.
+
+U ovom projektu ce se koristiti Pinia. Pinia sluzi za state management.
 -------------------------------------------------------------------------------------------------------
 ------------------------------------- kreiranje projekta - kraj ---------------------------------------
 -------------------------------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------------------------------
+----------------------------------------- vue-router - pocetak ----------------------------------------
+-------------------------------------------------------------------------------------------------------
+U fajlu /src/router/index.ts su definisane sve rute koje se koriste u aplikaciji.
+U index.ts su definisane path a path je ono sto je odmah nakon domena aplikacije ukljucujuci i /.
+Npr. https://mydomain.com/about 
+	- mydomain.com je domen
+	- /about je path
+U index.ts je:
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: HomeView,
+    },
+    {
+      path: '/about',
+      name: 'about',
+      // route level code-splitting
+      // this generates a separate chunk (About.[hash].js) for this route
+      // which is lazy-loaded when the route is visited.
+      component: () => import('../views/AboutView.vue'),
+    },
+  ],
+})
+
+U index.ts je definisano koja ce se komponenta prikazati na osnovu toga koji je path. Ako je path /about onda se prikazuje komponenta AboutView.vue.
+
+U createWebHistory(import.meta.env.BASE_URL) se prosledjuje podatak BASE_URL i to je domen. BASE_URL je path koji se uvek pojavljuje iza domena. Taj podatak u import.meta.env.BASE_URL se definise u vite.config.ts (fajl u root-u projekta). 
+Ako u aplikaciji zelimo da se posle domena, u url-u, uvek pojavljuje /app a da se nakon toga menja path. Zato se u vite.config.ts dodaje base:'/app' pa cemo imati:
+export default defineConfig({
+  base: '/app',
+  plugins: [
+    vue(),
+    vueDevTools(),
+  ],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    },
+  },
+})
+
+Kada se ode na about stranu url ce biti: http://localhost:5173/app/about
+
+
+<template>
+  <header>
+    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
+
+    <div class="wrapper">
+      <HelloWorld msg="You did it!" />
+
+      <nav>
+        <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/about">About</RouterLink>
+      </nav>
+    </div>
+  </header>
+
+  <RouterView />
+</template>
+
+U <RouterView /> se renderuje sadrzaj tj. komponente. RouterLink je komponenta koja se koristi za rutiranje tj. korisit se umesto html <a> elementa. Kada se klikne na <a> salje se request ka serveru i radi se reload stranice to je sporo. Kada se koristi RouterLink ne salje se request i reload nego se samo renderuje komponenta na mestu <RouterView /> i to se prikazuje trenutno jer je komponenta vec ucitana u vue aplikaciji.
+
+
+Rute se definisu u /src/router/index.ts. U njemu je:
+-------------- /src/router/index.ts - pocetak --------------
+import { createRouter, createWebHistory } from 'vue-router'
+import HomeView from '@/views/HomeView.vue'
+import FavoritesView from '@/views/FavoritesView.vue'
+import AddRecepieView from '@/views/AddRecepieView.vue'
+
+const router = createRouter({
+  history: createWebHistory(import.meta.env.BASE_URL),
+  routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: HomeView,
+    },
+    {
+      path: '/favorites',
+      name: 'favorites',
+      component: FavoritesView,
+    },
+    {
+      path: '/add-recepie',
+      name: 'add-recepie',
+      component: AddRecepieView,
+    },
+    {
+      path: '/recepie/:id',
+      name: 'recepie',
+      component: RecepieView
+    },
+    {
+      // definise se komponenta koja ce se prikazati ako se posalje request na path koji nije definisan
+      // pathMatch(.*) - . znaci bilo koji karakter a * znaci bilo koliko puta da se ponovi bilokoji karakter (ono sto je .)
+      // pathMatch - ne mora ovako da se definise, moze bilo kako. Vazno je (.*)
+      path: '/:pathMatch(.*)',
+      name: 'not-found',
+      component: NotFoundView,
+    },
+  ],
+})
+
+export default router
+-------------- /src/router/index.ts - kraj --------------
+
+U App.vue je:
+<template>
+  <header>
+    <nav>
+      <ul>
+        <li>
+          <RouterLink :to="{ name: 'home' }">Home</RouterLink>
+        </li>
+        <li>
+          <RouterLink :to="{ name: 'favorites' }">Favs</RouterLink>
+        </li>
+        <li>
+          <RouterLink :to="{ name: 'add-recepie' }">Add Recepie</RouterLink>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <RouterView />
+</template>
+
+to="/favorites" je ono sto je definisano u path: '/favorites'.
+Ako zelimo da koristimo ono sto je definisano u name="" onda se prosledjuje objekat u :to="".
+<RouterLink :to="{ name: 'favorities' }">Favs</RouterLink>
+
+Ako se u index.ts path promeni na path: '/favorites-jos-nesto' link ce i dalje raditi jer je name="favorites" ostao nepromenjen.
+
+Dinamicka ruta
+Dinamicka ruta se definise u index.ts sa path: '/recepie/:id', gde je id parametar koji se prosledjuje. Komponenta koja se prikazuje je RecepieView i to je definisano sa "component: RecepieView". 
+U RecepieView je: 
+<template>
+  <div>Recepie {{ $route.params.id }}</div>
+</template>
+
+Kada se posalje request http://localhost:5173/recepie/1234
+u RecepieView se renderuje: Recepie 1234
+
+{{ $route.params.id }} - ovo je dovoljno da se stavi u template i bice prikazano. $route.params ne mora da se importuje.
+Ako je potrebno da se prosledjenom parametru pristupi u script tagu onda se koristi useRoute composable koji se importuje iz vue-router.
+
+<script setup lang="ts">
+import { useRoute } from 'vue-router';
+
+const route = useRoute();
+console.log(route.params.id);
+</script>
+
+Dinamicka ruta sa parametrima - url moze dinamicki da se kreira sa parametrima tako sto se u RouterLink doda objekat params:{} i i njemu se prosledjuju parametri.
+
+<li>
+  <RouterLink :to="{ name: 'recepie', params: { id: 1 } }">Recepie 1</RouterLink>  - u komponentu HomeView s eprosledjuje parametar id=1 a kreira se url http://localhost:5173/recepie/1
+</li>
+<li>
+  <RouterLink :to="{ name: 'recepie', params: { id: 2 } }">Recepie 2</RouterLink>	- u komponentu HomeView s eprosledjuje parametar id=2 a kreira se url http://localhost:5173/recepie/2
+</li> 
+
+Definisanje path-a za not found.
+    {
+      // definise se komponenta koja ce se prikazati ako se posalje request na path koji nije definisan
+      // pathMatch(.*)* - . znaci bilo koji karakter a * znaci bilo koliko puta da se ponovi bilokoji karakter (ono sto je .)
+      // pathMatch - ne mora ovako da se definise, moze bilo kako. Vazno je (.*)
+      path: '/:pathMatch(.*)',
+      name: 'not-found',
+      component: NotFoundView,
+    },
+
+U NotFoundView.vue je:
+<template>
+  <div>404</div>
+  <div>
+    {{ $route.params.pathMatch }}
+  </div>
+</template>
+
+Kada je path: '/:pathMatch(.*)' i kada se posalje request na http://localhost:5173/favorites/555 u NotFoundView se renderuje: favorites/555
+Kada je path: '/:pathMatch(.*)*' i kada se posalje request na http://localhost:5173/favorites/555 u NotFoundView se renderuje: [ "favorites", "555" ] tj. kao niz pa to moze da se koristi ako treba.
+
+
+----------------------------------- Programmatic Navigation -----------------------------------
+Scenario: U komponenti AddRecepieView je forma u koju korisnik unosi podatke. Kada zavrsi sa unosom i klikne na dugme zelimo da ga programski redirektujemo na stranicu u kome ce biti prikazan taj recept. Za ovo se koristi push() metoda iz useRouter()
+Dokumentacija: https://router.vuejs.org/guide/essentials/navigation.html#Navigate-to-a-different-location
+
+U push() metodu se prosledjuje name ili path koji je definisan router index.js. Moze da se prosledi i parametar u objektu params. Dole u primeru kao parametar je zakucano id = 1.
+
+U AddRecepieView je:
+<template>
+  <div>Add form</div>
+  <form @submit.prevent="addRecepie">
+    <button type="submit">Add</button>
+  </form>
+</template>
+
+<script setup lang="ts">
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+const addRecepie = () => {
+  router.push({
+    name: 'recepie',
+    params: {
+      id: 1
+    }
+  });
+}
+</script>
+
+Nakon klika na Add dugme korisnik se redirektuje na http://localhost:5173/recepie/1 a u RecepieView komponenti se renderuje "Recepie 1".
+
+
+------------------------------------------- koriscenje onMounted() i watch() sa router-om -------------------------------------------
+Vue router optimizuje rad aplikacije tako sto ne radi svaki put mount komponenet. Ako se menja url on nece svaki put raduti unmount i mount komponente.
+
+Dole je prikazana komponenta RecepieView koja ima dva RouterLink-a i kada se klikce na njih url ce se menjati na /recepie/1 i recepie/3. Kada se klikne na link mena se url ali se ne radu unmout i mount komponente nego se samo menja sadrzaj te komponente koja je vec mountovana.
+
+Ako zelimo da radimo fetch podataka u onMounted metodi on ce se uraditi kada se mountuje RecepieView komponenta ali kada se posle klikne na RouterLink (za /recepie/1 ili recepie/3) nepoziva se onMounted() i nece se uraditi fetch podataka. U ovoj situaciji se koristi watch koji prati promenu url parametra route.params.id.
+
+Kada se mountuje komponenta ne poziva se watch metoda pa ako zelimo da se fetchuju podaci kada se mountuje komponenta onda se u watch dodaje { immediate: true }. Sa ovime se watch metoda poziva i prilikom mountovanja komponenet.
+
+Sa { immediate: true } ne mora da se koristi onMounted() za fetch podataka prilikom mountovanja komponente.
+
+RecepieView.vue komponenta:
+<template>
+  <div>Recepie {{ $route.params.id }}</div>
+  <nav>
+    <ul>
+      <li>
+        <RouterLink :to="{ name: 'recepie', params: { id: 1 } }">Recepie 1</RouterLink>
+      </li>
+      <li>
+        <RouterLink :to="{ name: 'recepie', params: { id: 3 } }">Recepie 3</RouterLink>
+      </li>
+    </ul>
+  </nav>
+</template>
+
+<script setup lang="ts">
+import { onMounted, watch } from 'vue'
+import { RouterLink, useRoute } from 'vue-router'
+
+const route = useRoute()
+console.log(route.params.id)
+
+onMounted(() => {
+  console.log(`Fetching data inside onMounted`)
+})
+
+// posto je route.params.id objekat koji nije reaktivan ne moze da se koristi kao parametar cija se promena prati u watch metodi
+// zato se korisri tzv. "geter metoda" () => route.params.id koja vraca vrednost koja je reaktivna
+watch(
+  () => route.params.id,
+  () => {
+    console.log(`Fetching data inside watch`)
+  },
+  { immediate: true },
+)
+</script>
+
+
+------------------------------------------ Redirects and Aliases ------------------------------------------
+Scenario: imamo dva url-a / i /home i oba trebaju da prikazu HomeView komponentu.
+Ovo gore moze da se uradi preko alijasa ili preko redirektovanja.
+
+Alijas:
+	- oba urla (i / i /home) prikazuju komponentu HomeView
+	- ne menja se url
+	- nije dobro za SEO optimizaciju zato sto se korise dva razlicita url-a
+
+Redirektovanje:
+	- kada se korisnik ode na /home redirektujemo ga na /
+	- dobro za SEO optimizaciju jer se koristi samo jedan url (/)
+	- nije dobro za korisnicko iskustvo jer redirektujemo korisnika
+
+Koriscenje alijasa - u index.ts se definise alijas:
+  routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: HomeView,
+      alias: '/home',
+    },
+Kada se u url-u ukuca / ili /home prikazuje se ista komponenta.
+Moze da se doda i vise alijasa za istu komponentu/rutu.
+alias: ['/home', '/home1', '/home2'] - svi ovi url-ovi ce prikazati istu komponentu.
+
+Koriscenje redirektovanja - u index.ts se definise jos jedna putanja:
+  routes: [
+    {
+      path: '/',
+      name: 'home',
+      component: HomeView,
+    },
+    {
+      path: '/home',
+      redirect: '/',
+    },
+Kada neko ode na url '/home' aplikacija ga redirektuje na '/'.
+-------------------------------------------------------------------------------------------------------
+------------------------------------------- vue-router - kraj -----------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+-------------------------------------------------------------------------------------------------------
+--------------------------------------------- Pinia - kraj --------------------------------------------
+-------------------------------------------------------------------------------------------------------
+Vue dokumentacija: https://pinia.vuejs.org/introduction.html
+Pinia je store za vue aplikaciju.
+Store centralizovani state management tj. globalni state u kome se cuva state aplikacije.
+Kada je state globalno dostupan onda se stanje state-a moze menjati iz svih komponenti i u svim komponentama je dostupan state. Sve komponente mogu da ga menjaju i da mu pristupaju.
+Kada se koristi state, podaci izmedju komponenti ne maoraju da se prosledjuju preko props.
+U store-u je state u kome se cuvaju podaci. Promena state-a je moguca jedino preko action-a a uzimanje podataka iz state-a preko getter-a.
+
+Kreiranje store-a:
+ - store-u dajemo ime. Mozemo imati vise store-a sa razlicitim imenima
+ - za kreiranje store-a se koristi metoda defineStore()
+ - po konvenciji, definisani/kreirani store se prosledjuje funkciji cije ime pocinje sa use...
+ - kada se koristi Options API u storeu se definise state, getters, actions. Ovde ce se koristiti Composition API i ovo je slicno setup funkciji u komponentama
+ - store u Composition API:
+	- u "const count = ref()" je state
+	- u "const getCount = computed(() => count.value)" je getter
+	- u "function increment() { count++ }" je action
+	- sve ovo se na kraju sa return {count, getCount, increment} vraca i dostupno je za koriscenje
+
+Kreira se fajl /src/stores/recepie.ts u kojem ce biti store i u njemu definisemo funkciju useRecepieStore. Ovu funkciju eksportujemo iz fajla i preko nje ce moci da se pristupi storeu.
+U /src/stores/recepie.ts je:
+------------ recepie.ts - pocetak -----------
+import { defineStore } from 'pinia';
+import { ref } from 'vue';
+
+// kreiramo tip podatka Recepie
+interface Recepie {
+  id: string;
+  name: string;
+  description: string;
+}
+
+// kreira se tip podatka NewRecepiee koji je isti kao Recepie samo bez property-a id
+// Omit je kljucna rec koja je iz TypeScript-a
+type NewRecepie = Omit<Recepie, 'id'>;
+
+export const useRecepieStore =
+  // definisemo state koji se zove recepie
+  defineStore('recepie', () => {
+    ////////////////// properties //////////////////
+    // definise se property u state-u koji ce sadrzati niz Recepie objekata
+    const recepies = ref<Recepie[]>([]);
+
+    ////////////////// actions //////////////////
+    const addRecepie = (recepie: NewRecepie) => {
+      // kada se iz forme posalju podaci od kojih treba da se kreira novi Recepie objekat ovde mu se dodeljuje id
+      const newRecepie = {
+        id: Date.now().toString(),
+        name: recepie.name,
+        description: recepie.description
+      }
+      recepies.value.push(newRecepie);
+      return newRecepie;
+    };
+
+    // sa return{} moraju da se vrate state, action i getter da bi bili dostupni za koriscenje
+    return { recepies, addRecepie };
+  });
+------------ recepie.ts - kraj ----------
+
+Da bi koristili store on mora da se importuje u komponentu u <script setup>
+<script setup lang="ts">
+import { RouterLink } from 'vue-router'
+import { useRecepieStore } from '@/stores/recepie';
+
+const recepieStore = useRecepieStore();
+</script>
+-------------------------------------------------------------------------------------------------------
+--------------------------------------------- Pinia - kraj --------------------------------------------
+-------------------------------------------------------------------------------------------------------
+
+
+
+
+
 
 -------------------------------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------- projekat Recepie Book - kraj --------------------------------------------------------
