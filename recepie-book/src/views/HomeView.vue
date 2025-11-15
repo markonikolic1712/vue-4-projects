@@ -15,6 +15,7 @@
       </ul>
     </nav>
     <div v-else>No recepies found!</div>
+    {{ recepieStore.secret }}
   </main>
 </template>
 <script setup lang="ts">
