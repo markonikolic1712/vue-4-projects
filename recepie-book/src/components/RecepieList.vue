@@ -1,15 +1,17 @@
 <template>
-  <div>
+  <div >
     <nav v-if="recepies.length > 0">
       <ul>
-        <li v-for="recepie in recepies" :key="recepie.id">
-          <RouterLink :to="{ name: 'recepie', params: { id: recepie.id } }">{{
-            recepie.name
-          }}</RouterLink>
+        <li v-for="recepie in recepies" :key="recepie.id" class="mb-2">
+          <RouterLink
+            :to="{ name: 'recepie', params: { id: recepie.id } }"
+            class="text-amber-600 hover:underline"
+            >{{ recepie.name }}</RouterLink
+          >
         </li>
       </ul>
     </nav>
-    <div v-else>No recepies found!</div>
+    <div v-else class="text-gray-500">No recepies found!</div>
   </div>
 </template>
 

@@ -1,4 +1,7 @@
-/* @taillwind base;
-@taillwind components;
-@taillwind utilities; */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+body {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}

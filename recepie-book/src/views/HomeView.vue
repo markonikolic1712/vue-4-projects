@@ -1,8 +1,13 @@
 <template>
   <main>
-    <h1>Recepie Book</h1>
+    <h1 class="text-2xl font-bold mb-4">Recepie Book</h1>
     <div>
-      <input type="text" v-model="searchQuery" />
+      <input
+        type="text"
+        v-model="searchQuery"
+        placeholder="Search recepies..."
+        class="p-2 border rounded mb-4 w-full"
+      />
     </div>
     <!-- ako postoji bar jedan element u nizu recepies onda se prikazuje -->
     <RecepieList :recepies="filteredRecepies" />
