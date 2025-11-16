@@ -1019,7 +1019,7 @@ Kreiranje projekta recepie-book:
 (uputstvo se moze naci i na https://www.fadocodecamp.com/posts/adding-tailwind-vite-vue)
  - npm install -D tailwindcss postcss autoprefixer
  - npm install -D tailwindcss@3.4.17
- - npx tailwindcss init -p	- da se inicijalizuje taillwind
+ - npx tailwindcss init -p				- da se inicijalizuje taillwind
 
 3. U root-u projekta je fajl taillwind.config.js i u njemu u "content:[]" treba dodati redove tako da bude:
 content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
@@ -1431,6 +1431,103 @@ import { useRecepieStore } from '@/stores/recepie';
 
 const recepieStore = useRecepieStore();
 </script>
+
+--------------------- Pinia plugins ---------------------
+Jedna od osobina pinie je da mogu da se koriste plugin-ovi.
+Jedan od pluginova je LocalStorage sync plugin. Sa njime dobijamo to da kada se sa actionom iz storea promeni stanje on odmah sinhronizuje tu promenu sa LocalStorage u browser-u. Takodje, ovaj plugin nam omogucava i da se inicijalno ucitaju podaci kada se aplikacija pokrene.
+
+Dodavanje pinia instance u apliakciju u main.ts:
+import { createPinia } from 'pinia';
+app.use(createPinia());
+Ovo je vec bilo dodato prilikom kreiranja aplikacije.
+
+Ako zelimo da dodamo/registrujemo plugin u pinia onda se prvo kreira pinia instanca a zatim se kreira plugin kao funkcija i registruje se u pinia-u.
+----------------------- main.ts je - pocetak -----------------------
+import './assets/main.css';
+
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
+
+import App from '@/App.vue';
+import router from '@/router';
+import localStoragePlugin from '@/plugins/pinia/localStoragePlugin';
+
+const app = createApp(App);
+const pinia = createPinia();
+
+// kreira se funkcija koja vraca objekat i nakon toga se ova funkcija registruje u pinia kao plugin
+// ovaj property ce biti dostupan u pinia store-u i moci ce da mu se pristupi iz svih komponenti aplikacije
+function ourPlugin() {
+  return {
+    secret: 'TEST',
+  };
+}
+pinia.use(ourPlugin);
+// registrovanje naseg custom localStoragePlugin plugina za manipulaciju sa stateom u localStorage
+pinia.use(localStoragePlugin);
+
+app.use(pinia);
+app.use(router);
+
+app.mount('#app');
+----------------------- main.ts je - pocetak -----------------------
+
+Dadavanje LocalStorage plugina
+Kreiraju se folderi /src/plugins/pinia i unutar njih fajl localStoragePlugin.ts
+Nas custom plugin koji smo kreirali za cuvanje stanja je /src/plugins/pinia/localStoragePlugin.ts
+----------------------- localStoragePlugin.ts - pocetak -----------------------
+import type { PiniaPluginContext } from 'pinia';
+
+// kod u plugin funkciji je inicijalizaciski kod i on s epokrece samo jedanput i to kada se plugin registruje u pinia u main.ts
+// ovaj pinia plugin je funkcija koja ima pristup store-u i moze da manipulise njime
+// PiniaPluginContext ima pristup store-u (context.store)
+const localStoragePlugin = (context: PiniaPluginContext) => {
+  const { store } = context;
+
+  // store ima pristup localStorage-u
+  // property store.$id je podatak koji smo prosledili prilikom kreiranja atate-a u recepir.ts i to je 'recepie' (ovo je u recepie.ts: defineStore('recepie', () => {)
+  // 1. pinia prvo pokusava da procita stanje iz state-a aplikacije
+  // 2. ako nema 'recepie' u state-u onda s eucitavaju podaci iz browser-a
+  const storedState = localStorage.getItem(store.$id);
+
+  // ako je store state undefined ili null onda se ucitavaju podaci iz browser-a
+  // ako u store-u ne postoji state sa imenom ($id) 'recepie' onda se ucitavaju podaci iz browsera
+  if (storedState) {
+    store.$patch(JSON.parse(storedState));
+  }
+
+  // kada se izmene neki podaci onda pozivamo action da promeni stanje u state-u
+  store.$subscribe((mutation, state) => {
+    localStorage.setItem(store.$id, JSON.stringify(state));
+  });
+};
+
+export default localStoragePlugin;
+----------------------- localStoragePlugin.ts - kraj -----------------------
+
+------------------------ definisanje custom tipova property-a - pocetak ------------------------
+Ovde se definisu custom tipovi property-a (objekata) koje cemo koristiti u aplikaciji. Ovo ce nam pomoci da se u aplikaciji primeni type safety. U isto vreme ce pomoci u radu intellisense VS code-a.
+Tipovi se definisu u fajlu sa ekstenzijom  d.ts i on je /src/types/pinia.d.ts. Fajlovi sa ekstenzijom d.ts su deklarisanje tipova i i koriste se kada se koristi TypeScript.
+
+SDada TypeScriptu trebamo da kazemo da gleda i ovaj fajl pa se u tconfig.app.json dodaje "src/**/*.d.ts".
+bilo je: "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
+sada je: "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "src/**/*.d.ts"],
+
+"src/**/*.d.ts" - u folderu src ce gledati sve moguce podfoldere i sve moguce fajlove sa d.ts ekstenzijom.
+
+U /src/types/pinia.d.ts je:
+import 'pinia';
+
+// sa "declare module 'pinia' {}" radimo ekstenziju modula pinia i u pinia modul dodajemo tipove
+// pinia modul prvo mora da se importuje kao sto je gore uradjeno
+declare module 'pinia' {
+  // radimo extend interfejsa PiniaCustomProperties i dodajemo mu custom tipove
+  // PiniaCustomProperties je interfejs u pinia modulu
+  export interface PiniaCustomProperties {
+    secret: string;
+  }
+}
+-------------------------- definisanje custom tipova property-a - kraj -------------------------
 -------------------------------------------------------------------------------------------------------
 --------------------------------------------- Pinia - kraj --------------------------------------------
 -------------------------------------------------------------------------------------------------------
