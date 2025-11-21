@@ -715,9 +715,9 @@ content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
  U folderu src/assets: 
  - treba obrisati fajlove: base.css i logo.svg
  - iz fajla main.css treba obrisati sve a dodati:
-	- @taillwind base;
-	- @taillwind components;
-	- @taillwind utilities;
+	- @tailwind base;
+	- @tailwind components;
+	- @tailwind utilities;
  - ispod ova tri reda koja su dodata je krivudava linija koju ESLint prikazuje. Da bi se to uklonilo ide se u folder .vscode (u rootu projekta) i dodaje se red "css.lint.unknownAtRules": "ignore"
   },
   "editor.formatOnSave": true,
@@ -1027,9 +1027,9 @@ content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
 4. U folderu src/assets: 
  - treba obrisati fajlove: base.css i logo.svg
  - iz fajla main.css treba obrisati sve a dodati:
-	@taillwind base;
-	@taillwind components;
-	@taillwind utilities;
+	@tailwind base;
+	@tailwind components;
+	@tailwind utilities;
  - ispod ova tri reda koja su dodata je krivudava linija koju ESLint prikazuje. Da bi se to uklonilo ide se u folder .vscode (u rootu projekta) i settings.json dodaje se red "css.lint.unknownAtRules": "ignore"
  
 5. Promene u components folderu i App.vue fajlu:
@@ -1509,7 +1509,7 @@ export default localStoragePlugin;
 Ovde se definisu custom tipovi property-a (objekata) koje cemo koristiti u aplikaciji. Ovo ce nam pomoci da se u aplikaciji primeni type safety. U isto vreme ce pomoci u radu intellisense VS code-a.
 Tipovi se definisu u fajlu sa ekstenzijom  d.ts i on je /src/types/pinia.d.ts. Fajlovi sa ekstenzijom d.ts su deklarisanje tipova i i koriste se kada se koristi TypeScript.
 
-SDada TypeScriptu trebamo da kazemo da gleda i ovaj fajl pa se u tconfig.app.json dodaje "src/**/*.d.ts".
+Sada TypeScriptu trebamo da kazemo da gleda i ovaj fajl pa se u tconfig.app.json dodaje "src/**/*.d.ts".
 bilo je: "include": ["env.d.ts", "src/**/*", "src/**/*.vue"],
 sada je: "include": ["env.d.ts", "src/**/*", "src/**/*.vue", "src/**/*.d.ts"],
 
@@ -1532,22 +1532,76 @@ declare module 'pinia' {
 --------------------------------------------- Pinia - kraj --------------------------------------------
 -------------------------------------------------------------------------------------------------------
 
-
-
-
-
-
 -------------------------------------------------------------------------------------------------------------------------------------------
 ----------------------------------------------------- projekat Recepie Book - kraj --------------------------------------------------------
 -------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
+3.4.29
 
+-------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------- projekat trello-clone - pocetak -------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
+U ovom projektu se kreira aplikacija koja je u osnovi to-do aplikacija. Kreira se beleska koja je podsetnik sta treba da se uradi. Zatim ta beleska tmoze da se prebaci u 'in progress' i na kraju da se prebaci u done.
+Svaka to-do beleska je jedna kartica i ta kartica moze da se prevlaci iz to-do dela u 'in progres' i dalje u done deo. Kada se kreira nova to-do beleska otvara se modal u koji se unose podaci.
 
+-------------------------------------------------------------------------------------------------------
+------------------------------------ kreiranje projekta - pocetak -------------------------------------
+-------------------------------------------------------------------------------------------------------
+3.4.29
 
+Kreiranje projekta recepie-book:
+1. kreiranje foldera i projekta u njemu
+ - npm create vue@latest - 3.4.29
+	- Project name: recepie-book
+	- Add Typescript: Yes
+	- Add JSX Support: No
+	- Add Router: Yes
+	- Add Pinia for state management: Yes
+	- Add Vitest for unit testing: No
+	- Add as End-to-End Testing dolution: No
+	- Add ESLint for code quality: Yes
+	- Add Prettier for code formatting: Yes
+	- Add Vue DevTools 7 extension for debugging: Yes
+ - cd recepie-book - da se udje u folder projekta
+ - npm install - da se instaliraju dependency
+ - npm run dev - pokretanje aplikacije
 
+2. Kada se kreira projekat udje se u folder recepie-book i doda se taillwind:
+(uputstvo se moze naci i na https://www.fadocodecamp.com/posts/adding-tailwind-vite-vue)
+ - npm install -D tailwindcss postcss autoprefixer
+ - npm install -D tailwindcss@3.4.17
+ - npx tailwindcss init -p				- da se inicijalizuje taillwind
 
+3. U root-u projekta je fajl taillwind.config.js i u njemu u "content:[]" treba dodati redove tako da bude:
+content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
+ 
+4. U folderu src/assets: 
+ - treba obrisati fajlove: base.css i logo.svg
+ - iz fajla main.css treba obrisati sve a dodati:
+	@tailwind base;
+	@tailwind components;
+	@tailwind utilities;
+ - ispod ova tri reda koja su dodata je krivudava linija koju ESLint prikazuje. Da bi se to uklonilo ide se u folder .vscode (u rootu projekta) i settings.json dodaje se red "css.lint.unknownAtRules": "ignore"
+ 
+5. Promene u components folderu i App.vue fajlu:
+ - iz components foldera mogu da se obrisu svi fajlovi
+ - iz App.vue se brise sve i ostaje samo:
+<template>
+  <main>Hellos</main>
+</template>
+<script setup lang="ts"></script>
+
+Po lang="ts" se vdi da se koristi Typescript.
+
+U ovom projektu ce se koristiti Pinia. Pinia sluzi za state management.
+-------------------------------------------------------------------------------------------------------
+------------------------------------- kreiranje projekta - kraj ---------------------------------------
+-------------------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------- projekat trello-clone - kraj --------------------------------------------------------
+-------------------------------------------------------------------------------------------------------------------------------------------
 
 
 
